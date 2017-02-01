@@ -237,7 +237,7 @@ ARMY.Move = function(){
             continue;
 
         if( unit.target ){
-            if( vec.GetDist( target ) > 4 ){
+            if( vec.GetDist( target ) > 2 ){
                 unit.direction = vec.GetDirection( target ) * 180 / Math.PI;
                 vec.Move( unit.speed, unit.direction );
             }
