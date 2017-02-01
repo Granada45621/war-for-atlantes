@@ -184,7 +184,7 @@ io.on( 'connection', function( socket ){
             citys.push( here );
 
             // Other Citys
-            for( var a = 0; a < 20; a++ ){
+            for( var a = 0; a < 10; a++ ){
                 var data = {
                     team : false,
                     vec : new Vector( 0,0 ),
@@ -237,7 +237,7 @@ ARMY.Move = function(){
             continue;
 
         if( unit.target ){
-            if( vec.GetDist( target ) > 10 ){
+            if( vec.GetDist( target ) > 4 ){
                 unit.direction = vec.GetDirection( target ) * 180 / Math.PI;
                 vec.Move( unit.speed, unit.direction );
             }
@@ -340,8 +340,8 @@ setInterval( (function(){
             city.pop += 2;
         else{
             city.pop += 1;
-            if( city.pop >= 500 )
-                city.pop = 500;
+            if( city.pop >= 200 )
+                city.pop = 200;
         }
     }
 }), 5000);
