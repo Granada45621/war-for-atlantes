@@ -1,0 +1,27 @@
+{
+  "name": "War For Atlantes",
+  "version": "0.2.5",
+  "description": "Line Battle Game",
+  "engines": {
+    "node": "5.9.1"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ejs": "2.4.1",
+    "express": "^4.10.2",
+    "socket.io": "^1.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.heroku.com/war-for-atlantes"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "license": "MIT"
+}

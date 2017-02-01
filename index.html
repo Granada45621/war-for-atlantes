@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>War For Atlantes</title>
+    <script src="./module/vector.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border; }
+        canvas { background: white; }
+    </style>
+</head>
+<body>
+    <canvas id="cv_main"></canvas>
+    <canvas id="cv_game"></canvas>
+
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <script>
+        var socket;
+        var user;
+
+        var canvas;
+        var stage;
+        var offset;
+
+        var teams;
+        var teams_data;
+
+        var buttons;
+
+        var citys;
+        var army;
+
+        var select;
+
+        var CLASS;
+        var SETTING;
+        var DRAW;
+        var EVENT;
+        var ACTION;
+
+        function Init(){
+            socket = io();
+
+            canvas = {
+                start : document.getElementById('cv_main'),
+                game : document.getElementById('cv_game'),
+                size : new Vector( 0,0 )
+            };
+
+            stage = {
+                start : canvas.start.getContext("2d"),
+                game : canvas.game.getContext("2d"),
+                show : 'start'
+            };
+
+            offset = new Vector( 0,0 );
+
+            user = {
+                name : 'Granada',
+                team : false
+            };
+
+            buttons = [];
+
+            citys = [];
+            army = [];
+
+            CLASS = {};
+            SETTING = {};
+            DRAW = {};
+            EVENT = {};
+            ACTION = {};
+
+            // Canvas Resize
+            canvas.start.setAttribute( 'width', window.innerWidth );
+            canvas.start.setAttribute( 'height', window.innerHeight );
+
+            canvas.game.setAttribute( 'width', window.innerWidth );
+            canvas.game.setAttribute( 'height', window.innerHeight );
+
+            // Define Canvas Size
+            canvas.size.x = canvas.start.width;
+            canvas.size.y = canvas.start.height;
+
+            // Hide Canvas
+            canvas.start.style.display = 'block';
+            canvas.game.style.display = 'none';
+
+            // Teams Update
+            socket.emit( 'get.teams' );
+            socket.on( 'get.teams', function( data ){
+                teams = data;
+            });
+
+            socket.emit( 'get.teams_data' );
+            socket.on( 'get.teams_data', function( data ){
+                teams_data = data;
+            });
+        }
+
+        Init();
+
+        // Socket
+        socket.on( 'update.user.team', function( data ){
+            user.team = data;
+        });
+
+        socket.on( 'update.city', function( data ){
+            var check = citys.length;
+            citys = data;
+
+            if( check == 0 ){
+                for( var c = 0; c < citys.length; c++ ){
+                    var city = citys[c];
+                    var vec = city.vec;
+                    vec = new Vector( -vec.x, -vec.y );
+
+                    if( city.team.name == user.team.name ){
+                        offset = vec.Add( canvas.size.x/2, canvas.size.y/2 );
+                        break;
+                    }
+                }
+            }
+
+            if( select.type == 'city' ){
+                if( citys[ select.index ].team.name != user.team.name ){
+                    select = false;
+                }
+            }
+        });
+
+        socket.on( 'update.army', function( data ){
+            army = data;
+        });
+
+        // Class
+        CLASS.Button = function( data ){
+            this.vec = data.vec;
+            this.size = data.size;
+            this.exe = data.exe;
+            this.insert = data.insert;
+        };
+
+        // Draw
+        DRAW.Start = {};
+        DRAW.Game = {};
+
+        DRAW.Start.Menu = function(){
+            var ctx = stage.start;
+
+            // Title
+            var text = 'War For Atlantes';
+            ctx.font = '1.6em Ubuntu';
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'end';
+            ctx.fillText( text, canvas.size.x - 60, 80 );
+
+            // New Game
+            var vec = new Vector( canvas.size.x-70, 130 );
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect( vec.x-180, vec.y-20, 190, 26 );
+
+            var text = 'Start';
+            ctx.font = '1.2em Ubuntu';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'end';
+            ctx.fillText( text, vec.x, vec.y );
+
+            var data = {
+                vec : vec.Clone().Sub( 180, 20 ),
+                size : new Vector( 190, 26 ),
+                exe : [ (function(){
+                    if( user.team ){
+                        stage.show = 'game';
+                        canvas.start.style.display = 'none';
+                        canvas.game.style.display = 'block';
+
+                        socket.emit( 'enter.game', user );
+                    }
+                    else{
+                        alert( 'Please Select Team' );
+                    }
+                })],
+                insert : {}
+            };
+            buttons.push( new CLASS.Button( data ) );
+        };
+        DRAW.Start.TeamSelect = function(){
+            var ctx = stage.start;
+
+            if( !teams ){
+                // Message
+                var text = '· · · · · Loading Team Data · · · · ·';
+                ctx.font = '1em Ubuntu';
+                //var width = ctx.measureText( text ).width;
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'left';
+                ctx.fillText( text, 60, 80 );
+            }
+            else if( teams.length <= 0 ){
+                // Message
+                var text = 'No Other Teams';
+                ctx.font = '1em Ubuntu';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'left';
+                ctx.fillText( text, 60, 80 );
+            }
+            else if( !user.team ){
+                var vec = new Vector( 60, 80 );
+
+                for( var t = 0; t < teams.length; t++ ){
+                    var team = teams[t];
+
+                    ctx.fillStyle = team.color;
+                    ctx.fillRect( vec.x, vec.y, 80, 10 );
+
+                    var data = {
+                        vec : vec.Clone(),
+                        size : new Vector( 80,10 ),
+                        exe : [ (function( data ){
+                            socket.emit( 'select.team', data.team );
+                        })],
+                        insert : { team : team }
+                    };
+                    buttons.push( new CLASS.Button( data ) );
+
+                    var text = team.name;
+                    ctx.font = '1em Ubuntu';
+                    ctx.fillStyle = 'black';
+                    ctx.textAlign = 'center';
+                    ctx.fillText( text, vec.x+80/2, vec.y-8 );
+
+                    vec.Add( 100, 0 );
+                }
+            }
+            else{
+                var text = user.team.name;
+                ctx.font = '1em Ubuntu';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.fillText( text, 60+80/2, 80-8 );
+
+                ctx.fillStyle = teams_data[ user.team.name ].color;
+                ctx.fillRect( 60, 80, 80, 10 );
+            }
+        };
+
+        DRAW.Game.DrawCity = function(){
+            var ctx = stage.game;
+
+            for( var c = 0, len = citys.length; c < len; c++ ){
+                var city = citys[c];
+                var size = 20;
+                var vec = city.vec;
+                vec = new Vector( vec.x,vec.y ).Sub( size/2,size/2 ).VecAdd( offset );
+
+                // Draw City Building
+                if( !city.team ){
+                    ctx.fillStyle = 'gray';
+                }
+                else{
+                    ctx.fillStyle = teams_data[ city.team.name ].color;
+                }
+                ctx.fillRect( vec.x, vec.y, size, size );
+
+                var text = city.pop;
+                ctx.font = '1em Ubuntu';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.fillText( text, vec.x+size/2, vec.y+14 );
+            }
+
+            if( select ){
+                var vec = select.vec;
+                vec = new Vector( vec.x, vec.y ).VecAdd( offset );
+
+                ctx.beginPath();
+                ctx.arc( vec.x, vec.y, 20, 0, 2 * Math.PI, false );
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+            }
+        };
+
+        DRAW.Game.DrawArmy = function(){
+            var ctx = stage.game;
+
+            for( var a = 0; a < army.length; a++ ){
+                var unit = army[a];
+                var size = 14;
+
+                var vec = unit.vec;
+                vec = new Vector( vec.x,vec.y ).Sub( size/2,size/2 ).VecAdd( offset );
+
+                var tvec = unit.target;
+                tvec = new Vector( tvec.x,tvec.y ).Sub( size/2,size/2 ).VecAdd( offset );
+
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = teams_data[ unit.team.name ].color;
+                ctx.strokeRect( vec.x, vec.y, size, size );
+
+                var text = unit.pop;
+                ctx.font = '0.8em Ubuntu';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.fillText( text, vec.x+size/2, vec.y+12 );
+            }
+        };
+
+        DRAW.Main = function(){
+            var ctx = stage[ stage.show ];
+            ctx.clearRect( 0, 0, canvas.size.x, canvas.size.y );
+            buttons = [];
+
+            if( stage.show == 'start' ){
+                DRAW.Start.TeamSelect();
+                DRAW.Start.Menu();
+            }
+            if( stage.show == 'game' ){
+                DRAW.Game.DrawCity();
+                DRAW.Game.DrawArmy();
+            }
+        };
+
+        setInterval( "DRAW.Main()", 80 );
+
+        // Event
+        EVENT.Button = function( event ){
+            var mx = event.clientX;
+            var my = event.clientY;
+            var mvec = new Vector( mx, my );
+
+            if( event.button == 0 ){
+                for( var b = 0, len = buttons.length; b < len; b++ ){
+                    var button = buttons[b];
+                    var vec = button.vec;
+                    var size = button.size;
+
+                    if( mvec.CheckRange( vec.x, vec.x+size.x, vec.y, vec.y+size.y ) ){
+                        for( var e = 0; e < button.exe.length; e++ ){
+                            button.exe[e]( button.insert );
+                        }
+                    }
+                }
+
+                // City Select
+                var check = false;
+                for( var c = 0; c < citys.length; c++ ){
+                    var city = citys[c];
+                    var vec = city.vec;
+                    var size = 20;
+                    vec = new Vector( vec.x, vec.y ).Sub( size/2, size/2 ).VecAdd( offset );
+
+                    if( mvec.CheckRange( vec.x, vec.x+size, vec.y, vec.y+size ) ){
+                        if( city.team.name == user.team.name ){
+                            select = city;
+                            check = true;
+                            break;
+                        }
+                    }
+                }
+
+                for( var u = 0; u < army.length; u++ ){
+                    var unit = army[u];
+                    var vec = unit.vec;
+                    var size = 10;
+                    vec = new Vector( vec.x, vec.y ).Sub( size/2, size/2 ).VecAdd( offset );
+
+                    if( mvec.CheckRange( vec.x, vec.x+size, vec.y, vec.y+size ) ){
+                        if( unit.team.name == user.team.name ){
+                            select = unit;
+                            check = true;
+                            break;
+                        }
+                    }
+                }
+
+                if( !check && select ){
+                    if( select.type == 'city' ){
+                        var data = {
+                            city : select,
+                            pos : mvec.Clone().VecSub( offset )
+                        };
+
+                        socket.emit( 'new.army', data );
+                    }
+
+                    if( select.type == 'army' ){
+                        var data = {
+                            army : select,
+                            pos : mvec.Clone().VecSub( offset )
+                        };
+
+                        socket.emit( 'army.target.change', data );
+                    }
+                }
+            }
+        };
+
+        EVENT.Key = function( event ){
+            var speed = 20;
+            if( event.keyCode == 39 ) offset.Sub( speed, 0 );
+            if( event.keyCode == 37 ) offset.Add( speed, 0 );
+            if( event.keyCode == 38 ) offset.Add( 0, speed );
+            if( event.keyCode == 40 ) offset.Sub( 0, speed );
+        };
+
+        document.addEventListener( 'click', EVENT.Button );
+        document.addEventListener( 'keydown', EVENT.Key );
+    </script>
+</body>
+</html>
