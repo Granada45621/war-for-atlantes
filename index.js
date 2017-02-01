@@ -194,13 +194,13 @@ io.on( 'connection', function( socket ){
 
                 var check = true;
                 while( check ){
-                    data.vec.Random( here.vec.x-500, here.vec.x+500, here.vec.y-500, here.vec.y+500 );
+                    data.vec.Random( here.vec.x-300, here.vec.x+300, here.vec.y-300, here.vec.y+300 );
 
                     check = false;
                     for( var c = 0, len = citys.length; c < len; c++ ){
                         var city = citys[c];
 
-                        if( city.vec.GetDist( data.vec ) <= 100 ){
+                        if( city.vec.GetDist( data.vec ) <= 60 ){
                             check = true;
                         }
                     }
