@@ -11,3 +11,7 @@ Left click :
 
 Key Board Control :
   * arrows : up down right left screen move
+
+Play game in your web browser
+Here is the link
+https://war-for-atlantes.herokuapp.com/
