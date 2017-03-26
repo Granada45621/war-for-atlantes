@@ -14,4 +14,4 @@ Key Board Control :
 
 Play game in your web browser
 Here is the link
-https://war-for-atlantes.herokuapp.com/
+https://war-for-atlantes-a.herokuapp.com/
